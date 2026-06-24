@@ -5,199 +5,161 @@ import matplotlib.pyplot as plt
 # =======================================================
 # CONFIGURACIÓN GENERAL
 # =======================================================
-st.set_page_config(page_title="Reporte de Radiación Solar", layout="wide")
+st.set_page_config(page_title="Reportes Radiación Solar", layout="wide")
 
-st.title("📊 Reporte de Radiación Solar")
-st.markdown("**Prospección Fotovoltaica - CELEC EP**")
+st.title("📊 Reportes Radiación Solar - CELEC")
+st.markdown("Sistema de análisis de datos fotovoltaicos")
 
-# 🔵 CAMBIO 1: Selección de estación (correcto usar selectbox)
-# (ANTES: no existía o era texto libre)
-estacion = st.selectbox(
-    "Nombre de la estación",
-    ["Pimampiro", "Riobamba"]
+# =======================================================
+# 🔵 MENÚ PRINCIPAL (COMO TU IMAGEN)
+# =======================================================
+menu = st.sidebar.radio(
+    "📌 Menú principal",
+    [
+        "📥 Carga de datos",
+        "📊 Análisis Anual",
+        "📈 Análisis Mensual",
+        "⏱️ Series temporales"
+    ]
 )
 
-st.info("Sube los archivos `.dat` de la estación para generar el análisis.")
-
 # =======================================================
-# CARGA DE ARCHIVOS
+# 🔧 FUNCIÓN DE LECTURA (REUTILIZABLE)
 # =======================================================
-col1, col2 = st.columns(2)
+@st.cache_data
+def cargar_datos(f1, f2):
 
-with col1:
-    archivo_tabla1 = st.file_uploader(
-        "Subir Tabla 1 (Radiación)", type=["dat", "csv"]
+    df = pd.read_csv(f1, skiprows=[0, 2, 3])
+    df1 = pd.read_csv(f2, skiprows=[0, 2, 3])
+
+    df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"])
+    df1["TIMESTAMP"] = pd.to_datetime(df1["TIMESTAMP"])
+
+    df = df.drop_duplicates(subset=["TIMESTAMP"])
+    df1 = df1.drop_duplicates(subset=["TIMESTAMP"])
+
+    df2 = pd.merge(df, df1, on="TIMESTAMP", how="inner")
+    df2.columns = df2.columns.str.strip()
+
+    # 🔵 CAMBIO IMPORTANTE: AÑO DINÁMICO
+    df2["AÑO"] = df2["TIMESTAMP"].dt.year
+    df2["MES"] = df2["TIMESTAMP"].dt.month
+    df2["HORA"] = df2["TIMESTAMP"].dt.hour
+
+    # 🔵 Radiación corregida
+    df2["rad_corr"] = pd.to_numeric(
+        df2["SR20T1_RadiacionCorregida_Avg"],
+        errors="coerce"
     )
 
-with col2:
-    archivo_tabla2 = st.file_uploader(
-        "Subir Tabla 2 (Soporte)", type=["dat", "csv"]
-    )
+    df2.loc[df2["rad_corr"] < 0, "rad_corr"] = 0
+    df2 = df2[(df2["rad_corr"] <= 1500) & (df2["rad_corr"].notna())]
+
+    # 🔵 Energía simple
+    df2["energia_kwh"] = (df2["rad_corr"] / 1000) * (10 / 60)
+
+    return df2
+
 
 # =======================================================
-# PROCESAMIENTO DE DATOS
+# 📥 1. CARGA DE DATOS
 # =======================================================
-if archivo_tabla1 is not None and archivo_tabla2 is not None:
+if menu == "📥 Carga de datos":
 
-    @st.cache_data
-    def procesar_archivos(f1, f2):
+    st.header("Carga de archivos")
 
-        df = pd.read_csv(f1, skiprows=[0, 2, 3])
-        df1 = pd.read_csv(f2, skiprows=[0, 2, 3])
+    archivo1 = st.file_uploader("Subir Tabla 1", type=["dat", "csv"])
+    archivo2 = st.file_uploader("Subir Tabla 2", type=["dat", "csv"])
 
-        df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"])
-        df1["TIMESTAMP"] = pd.to_datetime(df1["TIMESTAMP"])
+    if archivo1 and archivo2:
+        st.session_state["data"] = cargar_datos(archivo1, archivo2)
+        st.success("✔ Datos cargados correctamente")
 
-        df = df.drop_duplicates(subset=["TIMESTAMP"])
-        df1 = df1.drop_duplicates(subset=["TIMESTAMP"])
+# =======================================================
+# 📊 2. ANÁLISIS ANUAL (TU PRINCIPAL)
+# =======================================================
+elif menu == "📊 Análisis Anual":
 
-        df2 = pd.merge(df, df1, on="TIMESTAMP", how="inner")
-        df2.columns = df2.columns.str.strip()
+    st.header("Análisis Anual")
 
-        # =======================================================
-        # CAMBIO 2: CREACIÓN DE AÑO DINÁMICO
-        # (ANTES: estaba fijo a 2024 en versiones anteriores)
-        # =======================================================
-        df2["AÑO"] = df2["TIMESTAMP"].dt.year
+    # 🔴 CONTROL IMPORTANTE: evitar error si no hay datos
+    if "data" not in st.session_state:
+        st.warning("Primero carga los datos en 'Carga de datos'")
+        st.stop()
 
-        # =======================================================
-        # LIMPIEZA DE RADIACIÓN
-        # =======================================================
-        df2["rad_corr"] = pd.to_numeric(
-            df2["SR20T1_RadiacionCorregida_Avg"],
-            errors="coerce"
-        )
+    df2 = st.session_state["data"]
 
-        # valores negativos a 0
-        df2.loc[df2["rad_corr"] < 0, "rad_corr"] = 0
+    estacion = st.selectbox("Estación", ["Pimampiro", "Riobamba"])
+    anio = st.selectbox("Año", sorted(df2["AÑO"].unique()))
 
-        # filtro físico (radiación máxima realista)
-        df2 = df2[(df2["rad_corr"] <= 1500) & (df2["rad_corr"].notna())]
+    df = df2[df2["AÑO"] == anio]
 
-        # =======================================================
-        # CAMBIO 3: CÁLCULO DE ENERGÍA
-        # (supuesto: intervalo 10 min)
-        # =======================================================
-        df2["energia_kwh"] = (df2["rad_corr"] / 1000) * (10 / 60)
+    st.subheader(f"{estacion} - {anio}")
 
-        # =======================================================
-        # VARIABLES TEMPORALES
-        # =======================================================
-        df2["MES_N"] = df2["TIMESTAMP"].dt.month
-        df2["HORA"] = df2["TIMESTAMP"].dt.hour
-        df2["ANIO_MES"] = df2["TIMESTAMP"].dt.to_period("M")
-        df2["FECHA_SOLO"] = df2["TIMESTAMP"].dt.date
+    # TABLA MENSUAL
+    tabla = df.groupby("MES").agg(
+        radiacion_media=("rad_corr", "mean"),
+        radiacion_min=("rad_corr", "min"),
+        radiacion_max=("rad_corr", "max"),
+        energia_total=("energia_kwh", "sum")
+    ).reset_index()
 
-        return df2
+    st.dataframe(tabla, use_container_width=True)
 
+    # GRÁFICO
+    fig, ax = plt.subplots()
+    ax.plot(tabla["MES"], tabla["radiacion_media"], marker="o")
+    ax.set_title(f"Radiación mensual - {estacion} ({anio})")
+    ax.set_xlabel("Mes")
+    ax.set_ylabel("W/m²")
+    ax.grid(True)
 
-    df2 = procesar_archivos(archivo_tabla1, archivo_tabla2)
-    st.success("✔ Datos procesados correctamente")
+    st.pyplot(fig)
 
-    # =======================================================
-    # CAMBIO 4: FILTRO POR AÑO (CLAVE DEL DASHBOARD)
-    # =======================================================
-    anio = st.selectbox(
-        "📅 Selecciona el año de análisis",
-        sorted(df2["AÑO"].unique())
-    )
+# =======================================================
+# 📈 3. ANÁLISIS MENSUAL
+# =======================================================
+elif menu == "📈 Análisis Mensual":
 
-    # 🔥 ESTE ES EL FILTRO PRINCIPAL
-    df_anio = df2[df2["AÑO"] == anio]
+    st.header("Análisis Mensual")
 
-    # =======================================================
-    # PESTAÑAS (ESTRUCTURA FINAL)
-    # =======================================================
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Registro",
-        "📈 Perfil Horario",
-        "🗺️ Variabilidad Mensual",
-        "⚡ Energía"
-    ])
+    if "data" not in st.session_state:
+        st.warning("Primero carga los datos")
+        st.stop()
 
-    # =======================================================
-    # TAB 1 - REGISTRO
-    # =======================================================
-    with tab1:
-        st.subheader(f"Resumen de datos - {estacion} ({anio})")
+    df2 = st.session_state["data"]
 
-        tabla_mensual = df_anio.groupby("ANIO_MES").agg(
-            radiacion_mediana=("rad_corr", "median"),
-            radiacion_min=("rad_corr", "min"),
-            radiacion_max=("rad_corr", "max"),
-            energia_total=("energia_kwh", "sum"),
-            dias=("FECHA_SOLO", "nunique")
-        ).reset_index()
+    mes = st.selectbox("Mes", range(1, 13))
+    df_mes = df2[df2["MES"] == mes]
 
-        tabla_mensual["energia_diaria"] = (
-            tabla_mensual["energia_total"] / tabla_mensual["dias"]
-        )
+    fig, ax = plt.subplots()
+    ax.plot(df_mes["HORA"], df_mes["rad_corr"])
 
-        st.dataframe(tabla_mensual, use_container_width=True)
+    ax.set_title(f"Perfil horario - Mes {mes}")
+    ax.set_xlabel("Hora")
+    ax.set_ylabel("W/m²")
+    ax.grid(True)
 
-    # =======================================================
-    # TAB 2 - PERFIL HORARIO
-    # =======================================================
-    with tab2:
-        st.subheader(f"Perfil Horario - {estacion} ({anio})")
+    st.pyplot(fig)
 
-        perfil = df_anio.groupby("HORA")["rad_corr"].mean()
+# =======================================================
+# ⏱️ 4. SERIES TEMPORALES
+# =======================================================
+elif menu == "⏱️ Series temporales":
 
-        fig, ax = plt.subplots()
-        ax.plot(perfil.index, perfil.values, linewidth=3)
+    st.header("Series Temporales")
 
-        ax.set_xlabel("Hora del día")
-        ax.set_ylabel("W/m²")
+    if "data" not in st.session_state:
+        st.warning("Primero carga los datos")
+        st.stop()
 
-        # 🔵 CAMBIO IMPORTANTE: título dinámico
-        ax.set_title(f"Radiación horaria - {estacion} ({anio})")
+    df2 = st.session_state["data"]
 
-        ax.grid(True)
+    fig, ax = plt.subplots()
+    ax.plot(df2["TIMESTAMP"], df2["rad_corr"])
 
-        st.pyplot(fig)
+    ax.set_title("Serie temporal de radiación")
+    ax.set_xlabel("Tiempo")
+    ax.set_ylabel("W/m²")
 
-    # =======================================================
-    # TAB 3 - VARIABILIDAD MENSUAL
-    # =======================================================
-    with tab3:
-        st.subheader(f"Variabilidad Mensual - {estacion} ({anio})")
-
-        perfil_mes = df_anio.groupby(["MES_N", "HORA"])["rad_corr"].median().reset_index()
-
-        fig, ax = plt.subplots()
-
-        for m in range(1, 13):
-            data = perfil_mes[perfil_mes["MES_N"] == m]
-            ax.plot(data["HORA"], data["rad_corr"], alpha=0.5)
-
-        ax.set_xlabel("Hora")
-        ax.set_ylabel("W/m²")
-        ax.set_title(f"Variabilidad mensual - {estacion} ({anio})")
-
-        ax.grid(True)
-
-        st.pyplot(fig)
-
-    # =======================================================
-    # TAB 4 - ENERGÍA
-    # =======================================================
-    with tab4:
-        st.subheader(f"Energía Mensual - {estacion} ({anio})")
-
-        energia = df_anio.groupby("MES_N")["energia_kwh"].sum()
-
-        fig, ax = plt.subplots()
-        ax.plot(energia.index, energia.values, marker="o")
-
-        ax.set_xlabel("Mes")
-        ax.set_ylabel("kWh/m²")
-
-        # 🔵 CAMBIO: título dinámico CELEC
-        ax.set_title(f"Energía mensual - {estacion} ({anio})")
-
-        ax.grid(True)
-
-        st.pyplot(fig)
-
-else:
-    st.warning("Carga ambos archivos para iniciar el análisis")
+    st.pyplot(fig)
