@@ -111,9 +111,9 @@ elif menu == "📊 Análisis Anual":
     tabla_mensual = pd.DataFrame({
         "Fecha (Año-Mes)": tabla["MES"].astype(str),
         "Radiación Mediana (W/m²)": round(tabla["radiacion_global_media"], 1),
-        "Radiación Mínima (W/m²)": round(tabla["radiacion_global_min_diurna"], 1),
+        "Radiación Mínima (W/m²)": round(tabla["radiacion_global_min"], 1),
         "Radiación Máxima (W/m²)": round(tabla["radiacion_global_max"], 1),
-        "Energía Mensual (kWh/m²)": round(tabla["énergía_total"], 5)
+        "Energía Mensual (kWh/m²)": round(tabla["energía_total"], 5)
     })    
 
     st.dataframe(tabla_mensual, use_container_width=True)
@@ -129,7 +129,14 @@ elif menu == "📊 Análisis Anual":
     ax.grid(True)
 
     st.pyplot(fig)
+    fig, ax = plt.subplots()
+    ax.plot(tabla["MES"], tabla["radiacion_media"], marker="o")
+    ax.set_title(f"Radiación mensual - {estacion} ({anio})")
+    ax.set_xlabel("Mes")
+    ax.set_ylabel("W/m²")
+    ax.grid(True)
 
+    st.pyplot(fig)
 # =======================================================
 # 📈 3. ANÁLISIS MENSUAL
 # =======================================================
