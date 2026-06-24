@@ -10,7 +10,8 @@ st.set_page_config(page_title="Reporte de Radiación Solar", layout="wide")
 st.title("📊 Reporte de Radiación Solar")
 st.markdown("**Prospección Fotovoltaica - CELEC EP**")
 
-# 🔵 CAMBIO 1: Nombre de estación (NUEVO)
+# 🔵 CAMBIO 1: Selección de estación (correcto usar selectbox)
+# (ANTES: no existía o era texto libre)
 estacion = st.selectbox(
     "Nombre de la estación",
     ["Pimampiro", "Riobamba"]
@@ -24,13 +25,17 @@ st.info("Sube los archivos `.dat` de la estación para generar el análisis.")
 col1, col2 = st.columns(2)
 
 with col1:
-    archivo_tabla1 = st.file_uploader("Subir Tabla 1 (Radiación)", type=["dat", "csv"])
+    archivo_tabla1 = st.file_uploader(
+        "Subir Tabla 1 (Radiación)", type=["dat", "csv"]
+    )
 
 with col2:
-    archivo_tabla2 = st.file_uploader("Subir Tabla 2 (Soporte)", type=["dat", "csv"])
+    archivo_tabla2 = st.file_uploader(
+        "Subir Tabla 2 (Soporte)", type=["dat", "csv"]
+    )
 
 # =======================================================
-# PROCESAMIENTO
+# PROCESAMIENTO DE DATOS
 # =======================================================
 if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
@@ -50,16 +55,34 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
         df2.columns = df2.columns.str.strip()
 
         # =======================================================
-        # CAMBIO 2: NO FIJAR AÑO (ANTES ERA SOLO 2024)
+        # CAMBIO 2: CREACIÓN DE AÑO DINÁMICO
+        # (ANTES: estaba fijo a 2024 en versiones anteriores)
         # =======================================================
         df2["AÑO"] = df2["TIMESTAMP"].dt.year
 
-        df2["rad_corr"] = pd.to_numeric(df2["SR20T1_RadiacionCorregida_Avg"], errors="coerce")
+        # =======================================================
+        # LIMPIEZA DE RADIACIÓN
+        # =======================================================
+        df2["rad_corr"] = pd.to_numeric(
+            df2["SR20T1_RadiacionCorregida_Avg"],
+            errors="coerce"
+        )
+
+        # valores negativos a 0
         df2.loc[df2["rad_corr"] < 0, "rad_corr"] = 0
+
+        # filtro físico (radiación máxima realista)
         df2 = df2[(df2["rad_corr"] <= 1500) & (df2["rad_corr"].notna())]
 
+        # =======================================================
+        # CAMBIO 3: CÁLCULO DE ENERGÍA
+        # (supuesto: intervalo 10 min)
+        # =======================================================
         df2["energia_kwh"] = (df2["rad_corr"] / 1000) * (10 / 60)
 
+        # =======================================================
+        # VARIABLES TEMPORALES
+        # =======================================================
         df2["MES_N"] = df2["TIMESTAMP"].dt.month
         df2["HORA"] = df2["TIMESTAMP"].dt.hour
         df2["ANIO_MES"] = df2["TIMESTAMP"].dt.to_period("M")
@@ -72,18 +95,18 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
     st.success("✔ Datos procesados correctamente")
 
     # =======================================================
-    # CAMBIO 3: SELECTOR DE AÑO (CLAVE)
+    # CAMBIO 4: FILTRO POR AÑO (CLAVE DEL DASHBOARD)
     # =======================================================
     anio = st.selectbox(
         "📅 Selecciona el año de análisis",
         sorted(df2["AÑO"].unique())
     )
 
-    # FILTRO POR AÑO (CLAVE)
+    # 🔥 ESTE ES EL FILTRO PRINCIPAL
     df_anio = df2[df2["AÑO"] == anio]
 
     # =======================================================
-    # PESTAÑAS
+    # PESTAÑAS (ESTRUCTURA FINAL)
     # =======================================================
     tab1, tab2, tab3, tab4 = st.tabs([
         "📊 Registro",
@@ -106,7 +129,9 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
             dias=("FECHA_SOLO", "nunique")
         ).reset_index()
 
-        tabla_mensual["energia_diaria"] = tabla_mensual["energia_total"] / tabla_mensual["dias"]
+        tabla_mensual["energia_diaria"] = (
+            tabla_mensual["energia_total"] / tabla_mensual["dias"]
+        )
 
         st.dataframe(tabla_mensual, use_container_width=True)
 
@@ -120,8 +145,13 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
         fig, ax = plt.subplots()
         ax.plot(perfil.index, perfil.values, linewidth=3)
-        ax.set_xlabel("Hora")
+
+        ax.set_xlabel("Hora del día")
         ax.set_ylabel("W/m²")
+
+        # 🔵 CAMBIO IMPORTANTE: título dinámico
+        ax.set_title(f"Radiación horaria - {estacion} ({anio})")
+
         ax.grid(True)
 
         st.pyplot(fig)
@@ -138,10 +168,12 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
         for m in range(1, 13):
             data = perfil_mes[perfil_mes["MES_N"] == m]
-            ax.plot(data["HORA"], data["rad_corr"], alpha=0.6)
+            ax.plot(data["HORA"], data["rad_corr"], alpha=0.5)
 
         ax.set_xlabel("Hora")
         ax.set_ylabel("W/m²")
+        ax.set_title(f"Variabilidad mensual - {estacion} ({anio})")
+
         ax.grid(True)
 
         st.pyplot(fig)
@@ -156,8 +188,13 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
         fig, ax = plt.subplots()
         ax.plot(energia.index, energia.values, marker="o")
+
         ax.set_xlabel("Mes")
         ax.set_ylabel("kWh/m²")
+
+        # 🔵 CAMBIO: título dinámico CELEC
+        ax.set_title(f"Energía mensual - {estacion} ({anio})")
+
         ax.grid(True)
 
         st.pyplot(fig)
