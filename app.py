@@ -36,6 +36,7 @@ with col1:
 with col2:
     archivo_tabla2 = st.file_uploader("Subir Tabla 2 (Soporte)", type=["dat", "csv"])
 
+
 # =======================================================
 # PROCESAMIENTO
 # =======================================================
