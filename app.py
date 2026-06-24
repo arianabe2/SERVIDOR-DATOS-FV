@@ -11,7 +11,10 @@ st.title("📊 Reporte de Radiación Solar")
 st.markdown("**Prospección Fotovoltaica - CELEC EP**")
 
 # 🔵 CAMBIO 1: Nombre de estación (NUEVO)
-estacion = st.text_input("Nombre de la estación", value="Pimampiro")
+estacion = st.selectbox(
+    "Nombre de la estación",
+    ["Pimampiro", "Riobamba"]
+)
 
 st.info("Sube los archivos `.dat` de la estación para generar el análisis.")
 
