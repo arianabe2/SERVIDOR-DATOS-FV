@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 24 12:39:42 2026
-
-@author: ASUS
-"""
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,14 +7,11 @@ import matplotlib.pyplot as plt
 # =======================================================
 st.set_page_config(page_title="Reporte de Radiación Solar", layout="wide")
 
-st.title("Reporte de Radiación Solar")
+st.title("📊 Reporte de Radiación Solar")
 st.markdown("**Prospección Fotovoltaica - CELEC EP**")
 
 # 🔵 CAMBIO 1: Nombre de estación (NUEVO)
-estacion = st.selectbox(
-    "Nombre de la estación",
-    ["Pimampiro", "Riobamba"]
-)
+estacion = st.text_input("Nombre de la estación", value="Pimampiro")
 
 st.info("Sube los archivos `.dat` de la estación para generar el análisis.")
 
@@ -35,7 +25,6 @@ with col1:
 
 with col2:
     archivo_tabla2 = st.file_uploader("Subir Tabla 2 (Soporte)", type=["dat", "csv"])
-
 
 # =======================================================
 # PROCESAMIENTO
