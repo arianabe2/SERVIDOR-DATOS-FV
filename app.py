@@ -57,6 +57,10 @@ def cargar_datos(f1, f2):
 
     # 🔵 Energía simple
     df2["energia_kwh"] = (df2["rad_corr"] / 1000) * (10 / 60)
+    df2["MES_N"] = df2["TIMESTAMP"].dt.month
+    df2["HORA"] = df2["TIMESTAMP"].dt.hour
+    df2["ANIO_MES"] = df2["TIMESTAMP"].dt.to_period("M")
+    df2["FECHA_SOLO"] = df2["TIMESTAMP"].dt.date
 
     return df2
 
@@ -98,13 +102,21 @@ elif menu == "📊 Análisis Anual":
 
     # TABLA MENSUAL
     tabla = df.groupby("MES").agg(
-        radiacion_media=("rad_corr", "mean"),
-        radiacion_min=("rad_corr", "min"),
-        radiacion_max=("rad_corr", "max"),
+        radiacion_global_media=("rad_corr", "mean"),
+        radiacion_global_min=("rad_corr", "min"),
+        radiacion_global_max=("rad_corr", "max"),
         energia_total=("energia_kwh", "sum")
     ).reset_index()
+    
+    tabla_mensual = pd.DataFrame({
+        "Fecha (Año-Mes)": tabla["MES"].astype(str),
+        "Radiación Mediana (W/m²)": round(tabla["radiacion_global_mediana"], 1),
+        "Radiación Mínima (W/m²)": round(tabla["radiacion_global_min_diurna"], 1),
+        "Radiación Máxima (W/m²)": round(tabla["radiacion_global_max"], 1),
+        "Energía Mensual (kWh/m²)": round(tabla["énergía_total"], 5)
+    })    
 
-    st.dataframe(tabla, use_container_width=True)
+    st.dataframe(tabla_mensual, use_container_width=True)
 
     # GRÁFICO
     fig, ax = plt.subplots()
