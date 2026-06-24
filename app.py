@@ -113,7 +113,7 @@ elif menu == "📊 Análisis Anual":
         "Radiación Mediana (W/m²)": round(tabla["radiacion_global_media"], 1),
         "Radiación Mínima (W/m²)": round(tabla["radiacion_global_min"], 1),
         "Radiación Máxima (W/m²)": round(tabla["radiacion_global_max"], 1),
-        "Energía Mensual (kWh/m²)": round(tabla["energía_total"], 5)
+        "Energía Mensual (kWh/m²)": round(tabla["energia_total"], 5)
     })    
 
     st.dataframe(tabla_mensual, use_container_width=True)
