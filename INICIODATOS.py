@@ -71,7 +71,7 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
     # --- PESTAÑA 1: REGISTRO DE DATOS ---
     with tab1:
-        st.subheader("Resumen de Evaluación Mensual Intra-anual")
+        st.subheader("Resumen de datos anuales")
         tabla_mensual_datos = df2_2024.groupby("ANIO_MES").agg(
             radiacion_global_mediana=("rad_corr", "median"),
             radiacion_global_min=("rad_corr", "min"),
@@ -98,7 +98,7 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
     # --- PESTAÑA 2: PERFIL HORARIO PROMEDIO ---
     with tab2:
-        st.subheader("Curva de Campana Anual del Recurso Solar")
+        st.subheader("Variabilidad Horaria Anual")
         perfil_anual_horario = df2_2024.groupby("HORA")["rad_corr"].mean().reset_index()
         fig, ax = plt.subplots(figsize=(10, 4.5))
         ax.plot(perfil_anual_horario["HORA"], perfil_anual_horario["rad_corr"], color="#f57c00", linewidth=3)
@@ -111,7 +111,7 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
     # --- PESTAÑA 3: VARIABILIDAD MULTIMES ---
     with tab3:
-        st.subheader("Campanas Horarias por Cada Mes")
+        st.subheader("Variabilidad horaria de la Radiación Solar Global en los meses del año")
         perfil_horario_mes = df2_2024.groupby(["MES_N", "HORA"])["rad_corr"].median().reset_index()
         nombres_meses = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun", 7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
         fig, axes = plt.subplots(3, 4, figsize=(14, 8), sharex=True, sharey=True)
@@ -129,7 +129,7 @@ if archivo_tabla1 is not None and archivo_tabla2 is not None:
 
     # --- PESTAÑA 4: VARIACIÓN INTRA-ANUAL DE ENERGÍA ---
     with tab4:
-        st.subheader("Curva de Área Mensual (Estilo Mazar / CELEC)")
+        st.subheader("Variación intra-anual de energía")
         energia_por_mes = df2_2024.groupby("MES_N")["energia_kwh"].sum()
         meses_nombres = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
         energia_ordenada = [energia_por_mes.get(m, 0) for m in range(1, 13)]
