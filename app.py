@@ -206,7 +206,9 @@ elif menu == "📊 Análisis Anual":
             name="Mínimo"
         )
     )
-
+    st.dataframe(
+        tabla[["MES", "radiacion_global_media"]]
+)
 # ==========================================
 # FORMATO
 # ==========================================
