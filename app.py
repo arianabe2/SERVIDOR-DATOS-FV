@@ -120,46 +120,47 @@ elif menu == "📊 Análisis Anual":
 
     # GRÁFICAS
     import plotly.express as px
+    
 ##GRÁFICAS##
 
 # ==========================================
 # GRÁFICA 1 - RADIACIÓN MENSUAL
 # ==========================================
 
-fig1 = px.line(
-    tabla,
-    x="MES",
-    y="radiacion_media",
-    markers=True,
-    title=f"Radiación mensual promedio - {estacion} ({anio})"
-)
+    fig1 = px.line(
+        tabla,
+        x="MES",
+        y="radiacion_media",
+        markers=True,
+        title=f"Radiación mensual promedio - {estacion} ({anio})"
+        )
 
-fig1.update_layout(
-    xaxis_title="Mes",
-    yaxis_title="Radiación (W/m²)",
-    height=500
-)
+    fig1.update_layout(
+        xaxis_title="Mes",
+        yaxis_title="Radiación (W/m²)",
+        height=500
+        )
 
-st.plotly_chart(fig1, use_container_width=True)
+    st.plotly_chart(fig1, use_container_width=True)
 
 # ==========================================
 # GRÁFICA 2 - ENERGÍA MENSUAL
 # ==========================================
 
-fig2 = px.bar(
-    tabla,
-    x="MES",
-    y="energia_total",
-    title=f"Energía acumulada mensual - {estacion} ({anio})"
-)
+    fig2 = px.bar(
+        tabla,
+        x="MES",
+        y="energia_total",
+        title=f"Energía acumulada mensual - {estacion} ({anio})"
+        )
 
-fig2.update_layout(
-    xaxis_title="Mes",
-    yaxis_title="Energía (kWh/m²)",
-    height=500
-)
+    fig2.update_layout(
+        xaxis_title="Mes",
+        yaxis_title="Energía (kWh/m²)",
+        height=500
+        )
 
-st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, use_container_width=True)
 
 # =======================================================
 # 📈 3. ANÁLISIS MENSUAL
@@ -209,3 +210,4 @@ elif menu == "⏱️ Series temporales":
     ax.set_ylabel("W/m²")
 
     st.pyplot(fig)
+    
