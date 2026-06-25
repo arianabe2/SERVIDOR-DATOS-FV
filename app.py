@@ -51,7 +51,7 @@ def cargar_datos(f1, f2):
         df2["SR20T1_RadiacionCorregida_Avg"],
         errors="coerce"
     )
-
+#CORRECCIÓN DE LOS DATOS
     df2.loc[df2["rad_corr"] < 0, "rad_corr"] = 0
     df2 = df2[(df2["rad_corr"] <= 1500) & (df2["rad_corr"].notna())]
 
@@ -113,8 +113,9 @@ elif menu == "📊 Análisis Anual":
         "Radiación Mediana (W/m²)": round(tabla["radiacion_global_media"], 1),
         "Radiación Mínima (W/m²)": round(tabla["radiacion_global_min"], 1),
         "Radiación Máxima (W/m²)": round(tabla["radiacion_global_max"], 1),
-        "Energía Mensual (kWh/m²)": round(tabla["energia_total"], 5)
+        "Energía Mensual Acumulada (kWh/m²)": round(tabla["energia_total"], 5)
     })    
+    
 
     st.dataframe(tabla_mensual, use_container_width=True)
 
@@ -132,12 +133,12 @@ elif menu == "📊 Análisis Anual":
         x="MES",
         y="radiacion_global_media",
         markers=True,
-        title=f"Radiación mensual promedio - {estacion} ({anio})"
+        title=f"Variación mensual - {estacion} ({anio})"
         )
 
     fig1.update_layout(
         xaxis_title="Mes",
-        yaxis_title="Radiación (W/m²)",
+        yaxis_title="Radiación solar global (W/m²)",
         height=500
         )
 
@@ -151,7 +152,7 @@ elif menu == "📊 Análisis Anual":
         tabla,
         x="MES",
         y="energia_total",
-        title=f"Energía acumulada mensual - {estacion} ({anio})"
+        title=f"Variación intranual de energía - {estacion} ({anio})"
         )
 
     fig2.update_layout(
@@ -161,6 +162,43 @@ elif menu == "📊 Análisis Anual":
         )
 
     st.plotly_chart(fig2, use_container_width=True)
+    
+    
+# ==========================================
+# GRÁFICA 3 - RADIACIÓN SOLAR MENSUAL
+# ==========================================
+
+    perfil_horario_mes = (
+        df.groupby(["MES","HORA"])["rad_corr"]
+        .median()
+        .reset_index()
+        )
+
+    perfil_horario_mes["MES_NOMBRE"] = (
+        perfil_horario_mes["MES"]
+        .map({
+            1:"Ene",2:"Feb",3:"Mar",4:"Abr",
+            5:"May",6:"Jun",7:"Jul",8:"Ago",
+            9:"Sep",10:"Oct",11:"Nov",12:"Dic"
+        })
+    )
+
+    fig3 = px.line(
+        perfil_horario_mes,
+        x="HORA",
+        y="rad_corr",
+        color="MES_NOMBRE",
+        markers=True,
+        title=f"Variabilidad horaria en los meses del año - {estacion} ({anio})"
+    )
+
+    fig3.update_layout(
+        xaxis_title="Hora",
+        yaxis_title="Radiación solar global (W/m²)",
+        height=700
+    )
+
+    st.plotly_chart(fig3, use_container_width=True)
 
 # =======================================================
 # 📈 3. ANÁLISIS MENSUAL
