@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 # =======================================================
 # CONFIGURACIÓN GENERAL
 # =======================================================
@@ -161,11 +162,61 @@ elif menu == "📊 Análisis Anual":
         title=f"Variación mensual - {estacion} ({anio})"
         )
 
+# ==========================================
+# IDENTIFICAR MÁXIMO Y MÍNIMO
+# ==========================================
+
+    idx_max = tabla["radiacion_global_media"].idxmax()
+    idx_min = tabla["radiacion_global_media"].idxmin()
+    
+    mes_max = tabla.loc[idx_max, "MES"]
+    valor_max = tabla.loc[idx_max, "radiacion_global_media"]
+    
+    mes_min = tabla.loc[idx_min, "MES"]
+    valor_min = tabla.loc[idx_min, "radiacion_global_media"]
+
+# ==========================================
+# PUNTO MÁXIMO
+# ==========================================
+
+    fig1.add_trace(
+        go.Scatter(
+            x=[mes_max],
+            y=[valor_max],
+            mode="markers+text",
+            marker=dict(size=14, color="red"),
+            text=[f"Máx: {valor_max:.1f}"],
+            textposition="top center",
+            name="Máximo"
+        )
+    )
+
+# ==========================================
+# PUNTO MÍNIMO
+# ==========================================
+
+    fig1.add_trace(
+        go.Scatter(
+            x=[mes_min],
+            y=[valor_min],
+            mode="markers+text",
+            marker=dict(size=14, color="blue"),
+            text=[f"Mín: {valor_min:.1f}"],
+            textposition="bottom center",
+            name="Mínimo"
+        )
+    )
+
+# ==========================================
+# FORMATO
+# ==========================================
+    
     fig1.update_layout(
         xaxis_title="Mes",
         yaxis_title="Radiación solar global (W/m²)",
-        height=500
-        )
+        hovermode="x unified",
+        height=550
+    )
 
     st.plotly_chart(fig1, use_container_width=True)
 
