@@ -97,6 +97,31 @@ elif menu == "📊 Análisis Anual":
     anio = st.selectbox("Año", sorted(df2["AÑO"].unique()))
 
     df = df2[df2["AÑO"] == anio]
+    
+    st.subheader("Control de calidad de datos")
+
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Máximo", round(df["rad_corr"].max(), 2))
+    
+    with col2:
+        st.metric("Mínimo", round(df["rad_corr"].min(), 2))
+    
+    with col3:
+        st.metric("Media", round(df["rad_corr"].mean(), 2))
+    
+    with col4:
+        st.metric("Mediana", round(df["rad_corr"].median(), 2))
+        
+    st.subheader("20 valores más altos de radiación")
+
+    st.dataframe(
+        df[["TIMESTAMP", "rad_corr"]]
+        .sort_values("rad_corr", ascending=False)
+        .head(20),
+        use_container_width=True
+        )
 
     st.subheader(f"{estacion} - {anio}")
 
@@ -199,6 +224,10 @@ elif menu == "📊 Análisis Anual":
     )
 
     st.plotly_chart(fig3, use_container_width=True)
+
+# ==========================================
+# GRÁFICA 3 - RADIACIÓN SOLAR MENSUAL
+# ==========================================
 
 # =======================================================
 # 📈 3. ANÁLISIS MENSUAL
