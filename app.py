@@ -130,7 +130,7 @@ elif menu == "📊 Análisis Anual":
     fig1 = px.line(
         tabla,
         x="MES",
-        y="radiacion_media",
+        y="radiacion_global_media",
         markers=True,
         title=f"Radiación mensual promedio - {estacion} ({anio})"
         )
